@@ -1,13 +1,13 @@
-# Para importar as bibliotecas as vezes tem que ir no terminal e escrescer pip install <nomedabiblioteca>
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 import plotly.express as px
 import plotly.graph_objects as go
 import folium
 from haversine import haversine
-from PIL import Image #pip install Image (não PIL)
+from PIL import Image 
 from streamlit_folium import folium_static
 
 df = pd.read_csv('train.csv')
@@ -50,17 +50,20 @@ df1['Order_Date'] = pd.to_datetime(df1['Order_Date'], format = '%d-%m-%Y')
 df1['Time_taken(min)'] = df1['Time_taken(min)'].apply( lambda x: x.split( '(min) ' )[1] )
 df1['Time_taken(min)'] = df1['Time_taken(min)'].astype(int)
 
+print(df1.head(2))
 
 
+
+# NO TERMINAL PARA RODAR O STREAMLIT INSERIR O COMANDO streamlit rum <nome-do-arquivo.py>
 
 # ===================================================================
 # Slidebar no streamlit - TUDO QUE ESTIVER DENTRO DA BARRA PRECISA TER O .sidebar
 # =================================================================== 
 
-st.header('Visão Restaurantes') # O header fica como se fosse o .markdown ##
+st.header('Visão Restaurantes') 
 
 
-# Comando pra trazer imagem
+
 image_path = 'foco.png'
 image = Image.open( image_path )
 st.sidebar.image( image, width=120 )
@@ -68,28 +71,28 @@ st.sidebar.image( image, width=120 )
 
 st.sidebar.markdown('# Cury Company')
 st.sidebar.markdown('## Festest Delivery in Town')
-st.sidebar.markdown("""---""")  # BARRA DE SEPARAÇÃO
+st.sidebar.markdown("""---""")  #
 
-st.sidebar.markdown('## Date Filter') # Adicionar a barra de arrastar
+st.sidebar.markdown('## Date Filter') 
 
 date_slider = st.sidebar.slider(
     'Select a date:',
-    value=pd.datetime(2022, 4, 13), # ano/mes/dia
+    value=pd.datetime(2022, 4, 13), 
     min_value=pd.datetime(2022, 2, 11),
     max_value=pd.datetime(2022, 4, 6),
     format='DD-MM-YYYY' )
 
 st.sidebar.markdown("""---""")
 
-st.sidebar.markdown('## Traffic Condition Filter') # Adicionar filtro multi selecionável
+st.sidebar.markdown('## Traffic Condition Filter') 
 
 traffic_options = st.sidebar.multiselect(
     'Which traffic condition?', 
     ['Low', 'Medium', 'High', 'Jam'], 
-    default=['Low', 'Medium', 'High', 'Jam'] ) # pode deixar só com 1 parâmetro como padrão
+    default=['Low', 'Medium', 'High', 'Jam'] )
 
 
-st.sidebar.markdown("""---""") # Rodapé
+st.sidebar.markdown("""---""") 
 st.sidebar.markdown("### Powered by Comunidade DS.")
 st.sidebar.markdown("###### Talitha Oliveira")
 
@@ -119,50 +122,135 @@ with tab1:
     
     with st.container():
         
-        st.subheader ('Tem 2 colunas')
+        st.subheader ('Overall Metrics')
         
         
-        col1, col2 = st.columns( 2) 
+        col1, col2, col3, col4, col5, col6 = st.columns( 6 ) 
         with col1:
-            st.markdown ('#### Metrics')
-
+                        
+            ent_un = df1.loc[:, 'Delivery_person_ID'].nunique()
+            col1.metric('Entregadores únicos', ent_un)
             
 
 
         with col2:
-            st.markdown ('#### Metrics')
-
             
-
-
-            
-            
-    with st.container():
         
-        st.markdown("""---""")
-        st.subheader( 'Tem 1 coluna' )
-        
+            col_loc = ['Restaurant_latitude', 'Restaurant_longitude', 'Delivery_location_latitude', 'Delivery_location_longitude']
 
-
-
+            df1 ['distance'] = df1.loc[:, col_loc].apply( lambda x:
+                                      haversine(
+                                          (x['Restaurant_latitude'], x['Restaurant_longitude']),
+                                          (x['Delivery_location_latitude'], x['Delivery_location_longitude']) ) , axis=1)
             
-    with st.container():
-        st.markdown("""---""")
-        st.subheader('tb tem 2 colunas')
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('#### e')
+            dist_avg = round(df1.loc[:, 'distance'].mean(), 2)
+            col2.metric('Distâcia média', dist_avg)
             
             
                          
-        with col2:
-            st.markdown('#### q')   
+        with col3:
             
+            
+            tempo_avg_cfest = round(df1.loc[ df1['Festival'] == 'Yes', 'Time_taken(min)'].mean(), 2)
+            col3.metric('Tempo de entrega médio c/ festival', tempo_avg_cfest)
+            
+                         
+                         
+        with col4:
+
         
-                                     
+            tempo_std_cfest = round(df1.loc[ df1['Festival'] == 'Yes', 'Time_taken(min)'].std(), 2)
+            col4.metric('Desvio padrão de entregas c/ festival', tempo_std_cfest)           
+                         
+        with col5:
             
-       
+                         
+            tempo_avg_sfest = round(df1.loc[ df1['Festival'] == 'No', 'Time_taken(min)'].mean(), 2)
+            col5.metric('Tempo de entrega médio s/ festival', tempo_avg_sfest)             
+                         
+        with col6:
+
+
+            tempo_std_sfest = round(df1.loc[ df1['Festival'] == 'No', 'Time_taken(min)'].std(), 2)
+            col6.metric('Desvio padrão de entrega médio s/ festival', tempo_std_sfest)
+
+
+            
+            
+    with st.container():
+        st.markdown("""---""")
+        
+        colu1, colu2 = st.columns(2)
+        
+        with colu1:
+        
+
+            st.markdown('#### Distribuição do tempo por cidade') 
+
+            avg_std_city = df1.loc[:, ['City', 'Time_taken(min)']].groupby('City').agg({ 'Time_taken(min)' : ['mean', 'std']} )
+            avg_std_city.columns = ['time_mean', 'time_std']
+            avg_std_city = avg_std_city.reset_index()
+
+            fig = go.Figure()
+            fig.add_trace( go.Bar( name = 'Control', 
+                                  x= avg_std_city['City'], 
+                                  y= avg_std_city['time_mean'], 
+                                  error_y= dict (type = 'data', array=avg_std_city['time_std'] )))
+            fig.update_layout(barmode='group')
+            st.plotly_chart(fig, use_container_width=True)
+            
+            
+        with colu2:
+
+        
+            st.markdown('#### Tempo médio e o desvio padrão de entrega por cidade e tipo de tráfego.' )
+            
+            avg_std_city_traffic = df1.loc[:,['City', 'Road_traffic_density', 'Time_taken(min)']].groupby(['City', 'Road_traffic_density']).agg( {'Time_taken(min)': ['mean', 'std'] }).reset_index()
+            avg_std_city_traffic.columns = ['City', 'Traffic', 'Time_mean', 'Time_std']
+            grf = avg_std_city_traffic.reset_index(drop = True)
+
+            st.dataframe(grf)
+            
+
+
+
+                         
+            
+    with st.container():
+        st.markdown("""---""")
+
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown('#### Distância média por cidade' )
+    
+        
+            col_loc = ['Restaurant_latitude', 'Restaurant_longitude', 'Delivery_location_latitude', 'Delivery_location_longitude']
+
+            df1 ['distance'] = df1.loc[:, col_loc].apply( lambda x: haversine(
+                                              (x['Restaurant_latitude'], x['Restaurant_longitude']),
+                                              (x['Delivery_location_latitude'], x['Delivery_location_longitude']) ) , axis=1)
+
+
+            avg_dist = df1.loc[:, ['City', 'distance']].groupby('City').mean().reset_index()
+            fig1 = go.Figure(data = [ go.Pie( labels=avg_dist['City'], values = avg_dist['distance'], pull = [0, 0.05, 0])])
+            st.plotly_chart( fig1, use_container_width=True)
+            
+                         
+        with col2:
+            st.markdown('#### Tempo médio por tipo de entrega') 
+            avg_std_city_traffic = df1.loc[:,['City', 'Road_traffic_density', 'Time_taken(min)']].groupby(['City', 'Road_traffic_density']).agg( {'Time_taken(min)': ['mean', 'std'] }).reset_index()
+            avg_std_city_traffic.columns = ['City', 'Traffic', 'Time_mean', 'Time_std']
+            avg_std_city_traffic.reset_index()
+
+            fig2 = px.sunburst(avg_std_city_traffic, path=['City', 'Traffic'], values='Time_mean', 
+                              color='Time_std', color_continuous_scale='RdBu', 
+                              color_continuous_midpoint=np.average( avg_std_city_traffic['Time_std']))
+
+            st.plotly_chart(fig2, use_container_width=True)
+            
+            
+          
     
 with tab2:
     st.subheader ('_')
