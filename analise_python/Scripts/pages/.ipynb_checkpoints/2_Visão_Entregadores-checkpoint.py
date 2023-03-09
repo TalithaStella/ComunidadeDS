@@ -13,6 +13,7 @@ from PIL import Image #pip install Image (não PIL)
 from streamlit_folium import folium_static
 
 
+st.set_page_config( page_title='Visão Entregadores', layout='wide')
 # ====================================================================================
 # FUNÇÕES
 # ====================================================================================
@@ -112,8 +113,7 @@ st.header('Visão Entregadores') # O header fica como se fosse o .markdown ##
 
 
 # Comando pra trazer imagem
-image_path = 'foco.png'
-image = Image.open( image_path )
+image = Image.open( 'foco.png' )
 st.sidebar.image( image, width=120 )
 
 

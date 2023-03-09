@@ -14,14 +14,10 @@ from streamlit_folium import folium_static
 
 
 
-
-
-
-
-
-# =====================
+st.set_page_config( page_title='Visão Empresa', layout='wide')
+# ====================================================================================
 # FUNÇÕES
-# =====================
+# ====================================================================================
 
 
 # --------------------------------------------------------
@@ -88,12 +84,17 @@ def clean_code(df1):
     
     return df1
 
+df = pd.read_csv('train.csv')
+df1 = clean_code(df)
+
+
 
 # --------------------------------------------------------
 # Funções de gráfico
 # --------------------------------------------------------
 
 
+# GRÁFICO BARRAS
 def order_metric(df1): 
 
     df_aux = df1.loc[:, ['ID', 'Order_Date']].groupby( 'Order_Date' ).count().reset_index()
@@ -105,6 +106,7 @@ def order_metric(df1):
     return grf1
 
 
+# GRÁFICO DE PIZZA
 def traffic_order_share(df1):
 
     df_aux = df1.loc[:, ['ID', 'Road_traffic_density']].groupby( 'Road_traffic_density' ).count().reset_index()
@@ -116,6 +118,7 @@ def traffic_order_share(df1):
     return grf2 
 
 
+# GRÁFICO BOLHAS
 def traffic_order_city(df1):
     df_aux = df1.loc[:, ['ID', 'City', 'Road_traffic_density']].groupby( ['City', 'Road_traffic_density'] ).count().reset_index()
 
@@ -125,6 +128,7 @@ def traffic_order_city(df1):
     return grf3
 
 
+# GRÁFICOS EM LINHAS DE SEMANA - VISÃO TÁTICA
 def order_by_week( df1):
 
     df1['week_of_year'] = df1['Order_Date'].dt.strftime( "%U" )
@@ -136,6 +140,7 @@ def order_by_week( df1):
     return grf4
 
 
+# GRÁFICOS EM LINHAS DE SEMANA - VISÃO TÁTICA
 def delivery_by_week( df1):
 
     df_aux1 = df1.loc[:, ['ID', 'week_of_year']].groupby( 'week_of_year' ).count().reset_index()
@@ -150,6 +155,7 @@ def delivery_by_week( df1):
     return grf5
 
 
+# GRÁFICO DE MAPA
 def country_map(df1):
 
     data_plot = df1.loc[:, ['City', 'Road_traffic_density', 'Delivery_location_latitude', 'Delivery_location_longitude']].groupby( ['City', 'Road_traffic_density']).median().reset_index()
@@ -164,8 +170,6 @@ def country_map(df1):
     folium_static(map_, width=1024 , height=600 )
 
 
-df = pd.read_csv('train.csv')
-df1 = clean_code(df)
 
 
 # ===================================================================
@@ -223,6 +227,7 @@ df1 = df1.loc[traff_sel, :]
 
 
 
+
 # ===================================================================
 # Layout no streamlit  -- Aqui vai no corpo da página
 # ===================================================================
@@ -267,8 +272,7 @@ with tab1:
        
     
 with tab2:
-    with st.container():
-    
+    with st.container():    
         st.markdown('# Order by Week')
         grf4 = order_by_week(df1)
         

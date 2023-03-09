@@ -13,6 +13,7 @@ from PIL import Image #pip install Image (não PIL)
 from streamlit_folium import folium_static
 
 
+st.set_page_config( page_title='Visão Entregadores', layout='wide')
 # ====================================================================================
 # FUNÇÕES
 # ====================================================================================
@@ -91,90 +92,24 @@ df1 = clean_code(df)
 # Funções de gráfico
 # --------------------------------------------------------
 
+def top_entregadores(df1, asc):
 
-# GRÁFICO BARRAS
-def order_metric(df1): 
+    df2 = df1.loc[:, ['Time_taken(min)', 'City', 'Delivery_person_ID']].groupby(['City', 'Delivery_person_ID']).mean().sort_values(['City', 'Time_taken(min)'], ascending = asc ).reset_index()
 
-    df_aux = df1.loc[:, ['ID', 'Order_Date']].groupby( 'Order_Date' ).count().reset_index()
-    df_aux.columns = ['order_date', 'qtde_entregas']
+    aux01 = df2.loc[df2['City'] == 'Metropolitician', :].head(10)
+    aux02 = df2.loc[df2['City'] == 'Urban', :].head(10)
+    aux03 = df2.loc[df2['City'] == 'Semi_Urban', :].head(10)
 
+    df3 = pd.concat( [aux01, aux02, aux03] ).reset_index(drop=True)
 
-    grf1 = px.bar( df_aux, x='order_date', y='qtde_entregas' )
-
-    return grf1
-
-
-# GRÁFICO DE PIZZA
-def traffic_order_share(df1):
-
-    df_aux = df1.loc[:, ['ID', 'Road_traffic_density']].groupby( 'Road_traffic_density' ).count().reset_index()
-    df_aux['perc_ID'] = 100 * ( df_aux['ID'] / df_aux['ID'].sum() )
-
-    # gráfico
-    grf2 = px.pie( df_aux, values='perc_ID', names='Road_traffic_density' )
-
-    return grf2 
-
-
-# GRÁFICO BOLHAS
-def traffic_order_city(df1):
-    df_aux = df1.loc[:, ['ID', 'City', 'Road_traffic_density']].groupby( ['City', 'Road_traffic_density'] ).count().reset_index()
-
-
-    grf3 = px.scatter( df_aux, x='City', y='Road_traffic_density', size = 'ID', color='City' )
-
-    return grf3
-
-
-# GRÁFICOS EM LINHAS DE SEMANA - VISÃO TÁTICA
-def order_by_week( df1):
-
-    df1['week_of_year'] = df1['Order_Date'].dt.strftime( "%U" )
-    df_aux = df1.loc[:, ['ID', 'week_of_year']].groupby( 'week_of_year' ).count().reset_index()
-
-
-    grf4 = px.line( df_aux, x='week_of_year', y='ID' ) 
-
-    return grf4
-
-
-# GRÁFICOS EM LINHAS DE SEMANA - VISÃO TÁTICA
-def delivery_by_week( df1):
-
-    df_aux1 = df1.loc[:, ['ID', 'week_of_year']].groupby( 'week_of_year' ).count().reset_index()
-    df_aux2 = df1.loc[:, ['Delivery_person_ID', 'week_of_year']].groupby( 'week_of_year').nunique().reset_index()
-
-    df_aux = pd.merge( df_aux1, df_aux2, how='inner' )
-    df_aux['order_by_delivery'] = df_aux['ID'] / df_aux['Delivery_person_ID']
-
-
-    grf5 = px.line( df_aux, x='week_of_year', y='order_by_delivery' )
-
-    return grf5
-
-
-# GRÁFICO DE MAPA
-def country_map(df1):
-
-    data_plot = df1.loc[:, ['City', 'Road_traffic_density', 'Delivery_location_latitude', 'Delivery_location_longitude']].groupby( ['City', 'Road_traffic_density']).median().reset_index()
-
-    map_ = folium.Map( zoom_start=11 )
-
-    for index, location_info in data_plot.iterrows():
-        folium.Marker( [location_info['Delivery_location_latitude'],
-                        location_info['Delivery_location_longitude']],
-                        popup=location_info[['City', 'Road_traffic_density']] ).add_to( map_ )
-
-    folium_static(map_, width=1024 , height=600 )
-
-
+    return df3
 
 
 # ===================================================================
 # Slidebar no streamlit - TUDO QUE ESTIVER DENTRO DA BARRA PRECISA TER O .sidebar
 # =================================================================== 
 
-st.header('Marketplace - Visão Cliente') 
+st.header('Visão Entregadores') # O header fica como se fosse o .markdown ##
 
 
 # Comando pra trazer imagem
@@ -185,112 +120,163 @@ st.sidebar.image( image, width=120 )
 
 st.sidebar.markdown('# Cury Company')
 st.sidebar.markdown('## Fastest Delivery in Town')
-st.sidebar.markdown("""---""")  
+st.sidebar.markdown("""---""")  # BARRA DE SEPARAÇÃO
 
-st.sidebar.markdown('## Date Filter') 
+st.sidebar.markdown('## Date Filter') # Adicionar a barra de arrastar
 
 date_slider = st.sidebar.slider(
     'Select a date:',
-    value=pd.datetime(2022, 4, 13), 
+    value=pd.datetime(2022, 4, 13), # ano/mes/dia
     min_value=pd.datetime(2022, 2, 11),
     max_value=pd.datetime(2022, 4, 6),
     format='DD-MM-YYYY' )
 
 st.sidebar.markdown("""---""")
 
-st.sidebar.markdown('## Traffic Condition Filter')
+st.sidebar.markdown('## Traffic Condition Filter') # Adicionar filtro multi selecionável
+
 traffic_options = st.sidebar.multiselect(
     'Which traffic condition?', 
     ['Low', 'Medium', 'High', 'Jam'], 
-    default=['Low', 'Medium', 'High', 'Jam'] ) 
+    default=['Low', 'Medium', 'High', 'Jam'] ) # pode deixar só com 1 parâmetro como padrão
 
 
-st.sidebar.markdown("""---""") 
+st.sidebar.markdown("""---""") # Rodapé
 st.sidebar.markdown("### Powered by Comunidade DS.")
 st.sidebar.markdown("###### Talitha Oliveira")
 
 
+# SETTANDO OS FILTROS
 
-
-
-
+# Filtro de data
 datas_sel = df1['Order_Date'] < date_slider
 df1 = df1.loc[datas_sel, :]
 
 
-
-traff_sel = df1['Road_traffic_density'].isin( traffic_options ) 
+# Filtro de transito
+traff_sel = df1['Road_traffic_density'].isin( traffic_options ) # Isin - esta em <FILTRO CRIADO>
 df1 = df1.loc[traff_sel, :]
-
-
-
 
 
 # ===================================================================
 # Layout no streamlit  -- Aqui vai no corpo da página
 # ===================================================================
 
-
-
-tab1, tab2, tab3 = st.tabs( ['Visão Gerencial', 'Visão Tática', 'Visão geográfica'] )
+tab1, tab2, tab3 = st.tabs( ['Visão Gerencial', '_', '_'] )
 
 
 
 with tab1: 
     
-
     with st.container():
-        grf1 = order_metric(df1)
-        st.markdown('## Order by Day')
         
-        st.plotly_chart(grf1, use_container_width=True) 
+        st.subheader ('Overall Metrics')
         
-
         
-
-    with st.container():
-        col1, col2 = st.columns( 2 ) 
-        
+        col1, col2, col3, col4 = st.columns( 4, gap= 'large') 
         with col1:
-            grf2 = traffic_order_share(df1)
-            st.markdown ('## Traffic Order Share')
-            st.plotly_chart(grf2, use_container_width=True)
-            
 
             
-
+            maior_idd = df1.loc[:, 'Delivery_person_Age'].max()
+            col1.metric('Maior idade', maior_idd )
 
         with col2:
-            st.markdown ('## Traffic Order City')
-            grf3 = traffic_order_city(df1)
-                    
-            st.plotly_chart(grf3, use_container_width=True)
+
+            
+            menor_idd = df1.loc[:, 'Delivery_person_Age'].min()
+            col2.metric('Menor idade', menor_idd )
+
+        with col3:
+
+            maior_vcl = df1.loc[:, 'Vehicle_condition'].max()
+            col3.metric('Melhor condição', maior_vcl )            
+
+
+        with col4:
+
+            menor_vcl = df1.loc[:, 'Vehicle_condition'].min()
+            col4.metric('Pior condição', menor_vcl )
+            
+            
+    with st.container():
         
-    
+        st.markdown("""---""")
+        st.title( 'Avaliações' )
+        
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            
+            st.markdown(' #### Avaliação média por entregador')
+            av_entregador = df1.loc[:,['Delivery_person_ID', 'Delivery_person_Ratings'	]].groupby('Delivery_person_ID').mean().reset_index()
+            
+            st.dataframe(av_entregador)
+        
+
+        with col2:
+            st.markdown('#### Avaliação média por trânsito')
+            
+            avg_std = df1.loc[:, ['Delivery_person_Ratings', 'Road_traffic_density']].groupby('Road_traffic_density').agg({'Delivery_person_Ratings' : ['mean', 'std']}).reset_index()
+            
+            
+            avg_std.columns = ['Delivery_person_Ratings','delivery_mean', 'delivery_avg']  
+            avg_std.reset_index()
+
+            st.dataframe(avg_std)
+            
+            
+            
+            st.markdown('#### Avaliação média por clima')
+            
+            weather_avg_std = df1.loc[:, ['Delivery_person_Ratings', 'Weatherconditions']].groupby('Weatherconditions').agg({'Delivery_person_Ratings':['mean','std']})
+            weather_avg_std.columns = [ 'weather_mean', 'weather_std']
+            weather_avg_std.reset_index()
+
+            st.dataframe(weather_avg_std)
+            
+            
+            
+    with st.container():
+        st.markdown("""---""")
+        st.subheader('Velocidade de entrega')
+        
+ # Iniciando as funções:        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown('#### Top entregadores mais rápidos')
+            df3 = top_entregadores(df1, asc=True)
+          
+            st.dataframe(df3)
+                         
+                
+        with col2:
+            st.markdown('#### Top entregadores mais lentos')   
+            df3 = top_entregadores(df1, asc=False)
+            st.dataframe(df3)
+
+                                     
+            
        
     
 with tab2:
-    with st.container():    
-        st.markdown('# Order by Week')
-        grf4 = order_by_week(df1)
-        
-        st.plotly_chart(grf4, use_container_width=True)
-        
-        
-    with st.container():
-        st.markdown('# Delivery by Weeek')
-        grf5 = delivery_by_week( df1)     
-        
-        st.plotly_chart(grf5, use_container_width=True)
+    st.subheader ('_')
+
         
     
        
     
 
 with tab3:
-    st.markdown('## Location by Traffic:')
-    map_ = country_map(df1)
+    st.subheader ('_')
     
-    
+
+
+
+
+
+
+
 
 
