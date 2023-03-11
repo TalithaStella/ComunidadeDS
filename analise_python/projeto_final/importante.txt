@@ -1,0 +1,6 @@
+Mapa - folium: marcadores agrupados no mapa
+ID: o menor é o mais antigo
+Marcadores de cores diferentes que estão no def de cor
+oO marcador altera a cor de acordo com a nota o restaurante: quanto melhor a nota mais verde fica\ pior a nota mais vermelho
+
+Avaliar se tem mais alguma coisa que colocaria no projeto
