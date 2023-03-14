@@ -1,0 +1,20 @@
+visao geral
+Qual o nome do país que possui mais cidades registradas?
+Qual o nome do país que possui mais restaurantes com o nível de preço igual a 4 registrados?
+
+Qual a média de preço de um prato para dois por país?
+
+visao restaurantes
+Qual o nome do país que possui mais restaurantes registrados?
+Qual o nome do país que possui a maior quantidade de tipos de culinária distintos?
+Qual o nome do país que possui a maior quantidade de restaurantes que fazem entrega?
+Qual o nome do país que possui a maior quantidade de restaurantes que aceitam reservas?
+
+
+visao avaliacoes
+Qual o nome do país que possui a maior quantidade de avaliações feitas?
+Qual o nome do país que possui, na média, a maior quantidade de avaliações registrada?
+Qual o nome do país que possui, na média, a maior nota média registrada?
+Qual o nome do país que possui, na média, a menor nota média registrada?
+
+
