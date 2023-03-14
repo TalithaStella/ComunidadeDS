@@ -92,10 +92,11 @@ def country_name(country_id):
 
 # Aplicando as defs
 
-def clean_code(df1):
+def clean_code(data):
+    df = data.copy()
     
-    global df
     df = df.dropna()
+  
     df["country"] = df.loc[:, "Country Code"].apply(lambda x: country_name(x))
     df["color_name"] = df.loc[:, "Rating color"].apply(lambda x: color_name(x))
     df["Cuisines"] = df.loc[:, "Cuisines"].apply(lambda x: x.split(",")[0])
@@ -104,7 +105,7 @@ def clean_code(df1):
     df["table_booking"] = df.loc[:, "Has Table booking"].apply(lambda x: create_yes_no(x))
     df["online_delivery"] = df.loc[:, "Has Online delivery"].apply(lambda x: create_yes_no(x))
     
-    return df1
+    return df
 
 df = pd.read_csv('zomato.csv')
 df1 = clean_code(df)
@@ -169,10 +170,11 @@ with tab1:
     with st.container():
         st.subheader ('Paises com mais cidades registradas')
         
-        # pais_grf1 = df1.loc[:, ['City', 'country']].groupby('country').nunique().sort_values('City', ascending=False).reset_index()
-        # px.bar(pais_grf1, x='country', y='City')
+        pais_grf1 = df1.loc[:, ['City', 'country']].groupby('country').nunique().sort_values('City', ascending=False).reset_index()
+        fig = px.bar(pais_grf1, x='country', y='City')
         
-        # st.plotly_chart(pais_grf1, use_container_width=True)
+        
+        st.plotly_chart(fig, use_container_width=True)
 
         
 
